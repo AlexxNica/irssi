@@ -253,15 +253,17 @@ static void sig_print_starting(TEXT_DEST_REC *dest)
 	if (!IS_IRC_SERVER(dest->server))
 		return;
 
-	if (!(dest->level & MSGLEVEL_PUBLIC))
-		return;
-
-	if (!server_ischannel(dest->server, dest->target))
-		return;
-
 	rec = netjoin_find_server(IRC_SERVER(dest->server));
-	if (rec != NULL && rec->netjoins != NULL)
-		print_netjoins(rec, dest->target);
+	if (rec != NULL && rec->netjoins != NULL) {
+		/* if netjoins exists, the server rec should be
+		   still valid. otherwise, calling server->ischannel
+		   may not be safe. */
+		if (dest->target != NULL &&
+		    !server_ischannel((SERVER_REC *) rec->server, dest->target))
+			return;
+
+		print_netjoins(rec, NULL);
+	}
 }
 
 static int sig_check_netjoins(void)
